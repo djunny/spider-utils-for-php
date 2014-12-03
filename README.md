@@ -17,6 +17,7 @@ spider-utils-for-php:
 
 ##什么？转换相对路径到绝对路径
 ```php
+	// $result = http://baidu.com/bac/index.html
 	$result = spider::abs_url('http://baidu.com/abc/', '../bac/index.html');
 ```
 
@@ -63,9 +64,18 @@ spider-utils-for-php:
 ```php
 	$post = "wd=".urlencode("你的网址"); 
     // 数组也一样
-	// $post = array("wd=" => urlencode("你的网址"));
+	// $post = array("wd" => urlencode("你的网址"));
     $result = spider::fetch_url('http://www.baidu.com/s?',$post);
 ```
+
+
+##What？POST File？
+
+```php
+    $post = array("wd" => "http://", "file" => "@c:\1.txt");
+    $result = spider::fetch_url('http://www.baidu.com/s?',$post);
+```
+
 ##What？要带 UserAgent 和 Cookie? 
 
 ```php
@@ -104,4 +114,7 @@ spider-utils-for-php:
 好吧，你可以参考一下 mzphp2 项目中的 start_example 里的index_control，on_spider 方法：
 
 [http://git.oschina.net/mz/mzphp2/blob/master/start_example/control/index_control.class.php](http://git.oschina.net/mz/mzphp2/blob/master/start_example/control/index_control.class.php)
-	
+
+##注：
+
+mime_content_type 方法需要 php 开启 finfo

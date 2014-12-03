@@ -488,8 +488,7 @@ class spider {
 			$allow_url_fopen = (empty($allow_url_fopen) || $allow_url_fopen == 'off') ? 0 : 1;
 		}
 		//headers
-		$HTTP_USER_AGENT = $_SERVER['HTTP_USER_AGENT'];//core::gpc('$HTTP_USER_AGENT', 'S');
-		// default ua
+		$HTTP_USER_AGENT = $_SERVER['HTTP_USER_AGENT'];
 		empty($HTTP_USER_AGENT) && $HTTP_USER_AGENT = 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0)';
 		
 		$matches = parse_url($url);
@@ -507,36 +506,70 @@ class spider {
 			'Accept-Language' => 'zh-cn',
 		);
 		
-		if(is_array($post)){
-			$post = http_build_query($post);
-		}
+		
 		if(!empty($post)){
 			$defheaders['Cache-Control'] = 'no-cache';
 			$defheaders['Content-Type'] = 'application/x-www-form-urlencoded';
-			$defheaders['Content-Length'] = strlen($post);
 			$out = "POST {$path} HTTP/1.0\r\n";
 		}else{
 			$out = "GET {$path} HTTP/1.0\r\n";
 		}
-		//merge headers
+		
+		$socketmode = !$https && function_exists('fsockopen') && function_exists('mime_content_type') ? true : false;
+		// curl or socket
+		$fetchmode = function_exists('curl_init') || isset($headers['curl']) ? 'curl' : ($socketmode ? 'socket' : '');
+		// merge headers
 		if(is_array($headers) && $headers){
 			$defheaders = array_merge($defheaders, $headers);
 		}
-		foreach($defheaders as $hkey=>$hval){
-			$out .= $hkey.': '.$hval."\r\n";
-		}
-		if(!$https && function_exists('fsockopen')) {
-			$limit = 10240000;
+		
+		if($fetchmode == 'socket') {
+			$limit = 1024000000;
 			$ip = '';
 			$return = '';
+			// build post
+			if(is_array($post)){
+				$boundary = '';
+				$post_body = '';
+				foreach($post as $k=>$v){
+					if($v[0] == '@'){
+						$v = substr($v, 1);
+						if($v && is_file($v)){
+							if(!$boundary){
+								$boundary = '---------------upload'.uniqid('spider');
+							}
+							$mime = mime_content_type($v);
+							$post_body .= "\r\n".'Content-Disposition: form-data; name="'.$k.'"; filename="'.$v.'"'."\r\n"
+										.'Content-Type: '.$mime."\r\n\r\n".file_get_contents($v)."\r\n--".$boundary;
+							unset($post[$k]);
+						}
+					}
+				}
+				if($boundary){
+					if($post){
+						foreach($post as $k=>$v){
+							$post_body .= "\r\n".'Content-Disposition: form-data; name="'.$k.'"'."\r\n\r\n".$v."\r\n--".$boundary;
+						}
+					}
+					$post_body = '--'.$boundary.$post_body.'--';
+					$post = $post_body;
+					$defheaders['Content-Type'] = 'multipart/form-data; boundary='.$boundary;
+				}else{
+					$post = http_build_query($post);
+				}
+				$defheaders['Content-Length'] = strlen($post);
+			}
+			
+			foreach($defheaders as $hkey=>$hval){
+				$out .= $hkey.': '.$hval."\r\n";
+			}
 			$out .= "\r\n";
 			//append post body
 			if(!empty($post)) {
 				$out .= $post;
 			}
-
 			$host == 'localhost' && $ip = '127.0.0.1';
-			$fp = fsockopen(($ip ? $ip : $host), $port, $errno, $errstr, $timeout);
+			$fp = @fsockopen(($ip ? $ip : $host), $port, $errno, $errstr, $timeout);
 			if(!$fp) {
 				return FALSE;
 			} else {
@@ -547,10 +580,10 @@ class spider {
 				$gzip = false;
 				if(!$status['timed_out']) {
 					$starttime = time();
+					$resp_header = '';
 					while (!feof($fp)) {
 						if(($header = @fgets($fp)) && ($header == "\r\n" ||  $header == "\n")) {
 							break;
-							//Location: http://plugin.xiuno.net/upload/plugin/66/b0c35647c63b8b880766b50c06586c13.zip
 						} else {
 							$header = strtolower($header);
 							if(substr($header, 0, 9) == 'location:') {
@@ -585,13 +618,15 @@ class spider {
 				@fclose($fp);
 				return self::convert_html_charset($return, $charset);
 			}
-		} elseif(function_exists('curl_init')) {
+		} elseif($fetchmode == 'curl') {
 			$ch = curl_init();
 			curl_setopt($ch, CURLOPT_URL, $url);
 			curl_setopt($ch, CURLOPT_ENCODING, ''); 
 			curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 			curl_setopt($ch, CURLOPT_HEADER, 1);
 			curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
+			// set version 1.0 ( fix reponseCode 100 bug)
+			curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
 			if(!$deep){
 				$deep = 5;
 			}
@@ -649,7 +684,6 @@ class spider {
 			$html = file_get_contents($url, false, $context);  
 			return convert_html_charset($html, $charset);
 		} else {
-			log::write('fetch_url() failed: '.$url);
 			return FALSE;
 		}
 	}
