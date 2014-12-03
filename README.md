@@ -72,7 +72,7 @@ spider-utils-for-php:
 ##What？POST File？
 
 ```php
-    $post = array("wd" => "http://", "file" => "@c:\1.txt");
+    $post = array("wd" => "http://", "file" => "@c:/1.txt");
     $result = spider::fetch_url('http://www.baidu.com/s?',$post);
 ```
 
