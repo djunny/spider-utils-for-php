@@ -654,13 +654,16 @@ class spider {
 				curl_close($ch);
 				return '';
 			}
-			
-			list($header, $data) = explode("\r\n\r\n", $data, 2);
+			$header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+			$header = substr($data, 0, $header_size);
+			$data = substr( $data, $header_size );
+			//list($header, $data) = explode("\r\n\r\n", $data, 2);
 			$http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 			if($http_code == 301 || $http_code == 302) {
 				$matches = array();
 				preg_match('/Location:(.*?)\n/', $header, $matches);
 				$url = trim(array_pop($matches));
+				echo $url;exit;
 				curl_close($ch);
 				return self::fetch_url($url, $timeout, $post, $headers, $deep + 1);
 			}
