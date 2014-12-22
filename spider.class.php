@@ -474,6 +474,14 @@ class spider {
 		return $url . ($src_info['query'] ? '?' . $src_info['query'] : '');
 	}
 	
+	
+	public static function GET($url, $headers=array(), $timeout=5, $deep=0){
+		return self::fetch_url($url, '', $headers, $timeout, $deep);
+	}
+	
+	public static function POST($url, $post, $headers=array(), $timeout=5, $deep=0){
+		return self::fetch_url($url, $post, $headers, $timeout, $deep);
+	}
 
 	//fetch url 
 	public static function fetch_url($url, $post = '', $headers = array(), $timeout = 5, $deep = 0) {
@@ -621,16 +629,16 @@ class spider {
 		} elseif($fetchmode == 'curl') {
 			$ch = curl_init();
 			curl_setopt($ch, CURLOPT_URL, $url);
-			curl_setopt($ch, CURLOPT_ENCODING, ''); 
+			curl_setopt($ch, CURLOPT_ENCODING, 'gzip,deflate'); 
 			curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 			curl_setopt($ch, CURLOPT_HEADER, 1);
 			curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
-			// set version 1.0 ( fix reponseCode 100 bug)
+			// set version 1.0 
 			curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
 			if(!$deep){
 				$deep = 5;
 			}
-			curl_setopt($ch, CURLOPT_MAXREDIRS , $deep);
+			curl_setopt($ch, CURLOPT_MAXREDIRS, $deep);
 			curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
 			//must use curlopt_cookie param to set 
 			if(isset($defheaders['Cookie'])){
@@ -657,18 +665,8 @@ class spider {
 			$header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
 			$header = substr($data, 0, $header_size);
 			$data = substr( $data, $header_size );
-			//list($header, $data) = explode("\r\n\r\n", $data, 2);
-			$http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-			if($http_code == 301 || $http_code == 302) {
-				$matches = array();
-				preg_match('/Location:(.*?)\n/', $header, $matches);
-				$url = trim(array_pop($matches));
-				echo $url;exit;
-				curl_close($ch);
-				return self::fetch_url($url, $timeout, $post, $headers, $deep + 1);
-			}
 			//match charset
-			preg_match('@Content-Type:\s+([\w/+]+)(;\s+charset=([\w-]+))?@is', $header, $charsetmatch);
+			preg_match('@Content-Type:\s*([\w\/]+)(;\s+charset\s*=\s*([\w-]+))?@is', $header, $charsetmatch);
 			if (isset($charsetmatch[3])){
 				$charset = $charsetmatch[3];
 			}
