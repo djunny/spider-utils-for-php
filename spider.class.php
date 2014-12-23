@@ -713,46 +713,48 @@ class spider {
 		//取html中的charset
 		$detect_charset = '';
 		//html file
-		if(stripos($html, '<html')!==false){
-			if(stripos($html, 'charset=') !==false){
-				$head = self::mask_match($html, '(*)</head>');
-				if($head){
-					$head = strtolower($head);
-					$head = self::reg_replace($head, array(
-									'<script(*)/script>' => '',
-									'<style(*)/style>' => '',
-									'<link(*)>' => '',
-									"\r" => '',
-									"\n" => '',
-									"\t" => '',
-									" " => '',
-									//"'" => '',
-									//"\"" => '',
-								));
-					preg_match_all('/charset=([-\w]+)/', $head, $matches);
+		if($charset){
+			//优先取 http header中的charset
+			$detect_charset = $charset;
+		}else{
+			if(stripos($html, '<html')!==false){
+				if(stripos($html, 'charset=') !==false){
+					$head = self::mask_match($html, '(*)</head>');
+					if($head){
+						$head = strtolower($head);
+						$head = self::reg_replace($head, array(
+										'<script(*)/script>' => '',
+										'<style(*)/style>' => '',
+										'<link(*)>' => '',
+										"\r" => '',
+										"\n" => '',
+										"\t" => '',
+										" " => '',
+										//"'" => '',
+										//"\"" => '',
+									));
+						preg_match_all('/charset=([-\w]+)/', $head, $matches);
+						if(isset($matches[1][0]) && !empty($matches[1][0])){
+							$detect_charset = $matches[1][0];
+						}
+					}
+				}
+			}
+			//xml file
+			if(stripos($html, '<xml')!==false){
+				//<?xml version="1.0" encoding="UTF-8"
+				if(stripos($html, 'encoding=') !==false){
+					$head = self::mask_match($html, '<'.'?xml(*)?'.'>');
+					preg_match_all('/encoding=([-\w]+)/is', $head, $matches);
 					if(isset($matches[1][0]) && !empty($matches[1][0])){
 						$detect_charset = $matches[1][0];
 					}
 				}
 			}
 		}
-		//xml file
-		if(stripos($html, '<xml')!==false){
-			//<?xml version="1.0" encoding="UTF-8"
-			if(stripos($html, 'encoding=') !==false){
-				$head = self::mask_match($html, '<'.'?xml(*)?'.'>');
-				preg_match_all('/encoding=([-\w]+)/is', $head, $matches);
-				if(isset($matches[1][0]) && !empty($matches[1][0])){
-					$detect_charset = $matches[1][0];
-				}
-			}
-		}
-		//取 http header中的charset
-		if(!$detect_charset && $charset){
-			if(strtolower($charset) =='iso-8859-1'){
-				$charset = 'gbk';
-			}
-			$detect_charset = $charset;
+		//alias
+		if(strtolower($detect_charset) =='iso-8859-1'){
+			$detect_charset = 'gbk';
 		}
 		
 		if($detect_charset){
