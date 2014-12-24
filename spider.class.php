@@ -517,7 +517,6 @@ class spider {
 		
 		if(!empty($post)){
 			$defheaders['Cache-Control'] = 'no-cache';
-			$defheaders['Content-Type'] = 'application/x-www-form-urlencoded';
 			$out = "POST {$path} HTTP/1.0\r\n";
 		}else{
 			$out = "GET {$path} HTTP/1.0\r\n";
@@ -535,6 +534,7 @@ class spider {
 			$limit = 1024000000;
 			$ip = '';
 			$return = '';
+			$defheaders['Content-Type']	= 'application/x-www-form-urlencode';
 			// build post
 			if(is_array($post)){
 				$boundary = '';
@@ -629,7 +629,6 @@ class spider {
 		} elseif($fetchmode == 'curl') {
 			$ch = curl_init();
 			curl_setopt($ch, CURLOPT_URL, $url);
-			curl_setopt($ch, CURLOPT_ENCODING, 'gzip,deflate');
 			curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 			curl_setopt($ch, CURLOPT_HEADER, 1);
 			curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
@@ -639,12 +638,14 @@ class spider {
 				curl_setopt($ch, CURLOPT_INTERFACE, $defheaders['ip']);
 				unset($defheaders['ip']);
 			}
-			// set version 1.0 
-			curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
-			if(!$deep){
-				$deep = 5;
+			//gzip compress
+			if($defheaders['Accept-Encoding']){
+				curl_setopt($ch, CURLOPT_ENCODING, $defheaders['Accept-Encoding']);
+				unset($defheaders['Accept-Encoding']);
 			}
-			curl_setopt($ch, CURLOPT_MAXREDIRS, $deep);
+			// set version 1.0 
+			//curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
+			curl_setopt($ch, CURLOPT_MAXREDIRS, $deep ? $deep : 5);
 			curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
 			//build curl headers
 			$header_array = array();
@@ -658,7 +659,15 @@ class spider {
 			}
 			if($post) {
 				curl_setopt($ch, CURLOPT_POST, 1);
-				curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
+				//find out post file use multipart/form-data
+				$multipart = 0;
+				foreach($post as $v){
+					if($v[0] == '@'){
+						$multipart = 1;
+						break;
+					}
+				}
+				curl_setopt($ch, CURLOPT_POSTFIELDS, $multipart ? $post : http_build_query($post));
 			}
 			$data = curl_exec($ch);
 			
@@ -670,11 +679,12 @@ class spider {
 				return '';
 			}
 			//for debug request header
-			//$info = curl_getinfo($ch, CURLINFO_HEADER_OUT );print_r($info);exit;
+			//print_r($defheaders);
+			//$info = curl_getinfo($ch, CURLINFO_HEADER_OUT );print_r($info);echo http_build_query($post);exit;
 			$header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
 			
 			$header = substr($data, 0, $header_size);
-			$data = substr( $data, $header_size );
+			$data = substr($data, $header_size);
 			//match charset
 			preg_match('@Content-Type:\s*([\w\/]+)(;\s+charset\s*=\s*([\w-]+))?@is', $header, $charsetmatch);
 			if (isset($charsetmatch[3])){
