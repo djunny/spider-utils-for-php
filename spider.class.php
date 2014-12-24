@@ -646,10 +646,6 @@ class spider {
 			}
 			curl_setopt($ch, CURLOPT_MAXREDIRS, $deep);
 			curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-			//must use curlopt_cookie param to set 
-			if(isset($defheaders['Cookie'])){
-				curl_setopt($ch, CURLOPT_COOKIE, $defheaders['Cookie']);
-			}
 			//build curl headers
 			$header_array = array();
 			foreach($defheaders as $key=>$val){
