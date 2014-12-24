@@ -629,10 +629,16 @@ class spider {
 		} elseif($fetchmode == 'curl') {
 			$ch = curl_init();
 			curl_setopt($ch, CURLOPT_URL, $url);
-			curl_setopt($ch, CURLOPT_ENCODING, 'gzip,deflate'); 
+			curl_setopt($ch, CURLOPT_ENCODING, 'gzip,deflate');
 			curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 			curl_setopt($ch, CURLOPT_HEADER, 1);
 			curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
+			curl_setopt($ch, CURLINFO_HEADER_OUT, 1);
+			//多ip下，设置出口ip
+			if(isset($defheaders['ip'])){
+				curl_setopt($ch, CURLOPT_INTERFACE, $defheaders['ip']);
+				unset($defheaders['ip']);
+			}
 			// set version 1.0 
 			curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
 			if(!$deep){
@@ -644,7 +650,12 @@ class spider {
 			if(isset($defheaders['Cookie'])){
 				curl_setopt($ch, CURLOPT_COOKIE, $defheaders['Cookie']);
 			}
-			curl_setopt($ch, CURLOPT_HTTPHEADER, $defheaders);
+			//build curl headers
+			$header_array = array();
+			foreach($defheaders as $key=>$val){
+				$header_array[] = $key.': '.$val;
+			}
+			curl_setopt($ch, CURLOPT_HTTPHEADER, $header_array);
 			if($https){
 				curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0); // 对认证证书来源的检查
 				curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2); // 从证书中检查SSL加密算法是否存在
@@ -662,7 +673,10 @@ class spider {
 				curl_close($ch);
 				return '';
 			}
+			//for debug request header
+			//$info = curl_getinfo($ch, CURLINFO_HEADER_OUT );print_r($info);exit;
 			$header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+			
 			$header = substr($data, 0, $header_size);
 			$data = substr( $data, $header_size );
 			//match charset
