@@ -639,7 +639,7 @@ class spider {
 				unset($defheaders['ip']);
 			}
 			//gzip compress
-			if($defheaders['Accept-Encoding']){
+			if(isset($defheaders['Accept-Encoding'])){
 				curl_setopt($ch, CURLOPT_ENCODING, $defheaders['Accept-Encoding']);
 				unset($defheaders['Accept-Encoding']);
 			}
