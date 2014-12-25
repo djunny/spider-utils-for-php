@@ -21,6 +21,12 @@ spider-utils-for-php:
 	$result = spider::abs_url('http://baidu.com/abc/', '../bac/index.html');
 ```
 
+##什么？html2txt?
+```php
+	// $result = 123
+	$result = spider::html2txt('<p><a href="">1</a>23<p>');
+```
+
 ##什么？字符串截取？
 ```php
 	// $result = 23abcde
