@@ -4,6 +4,57 @@ class spider {
 	public static function no_html($html){
 		return self::reg_replace($html, array('<(*)>' => ''));
 	}
+	//convert html to text
+	public static function html2txt($html){
+		$html = preg_replace('/^[\s\t　]+/is', '', $html);
+		$html = preg_replace('#<?xml[\s\S]*?>#is', '', $html);
+		$html = preg_replace('#<!--[\s\S]*?-->#is', '', $html);
+		$html = preg_replace('#<!doc[\s\S]*?>#is', '', $html);
+		$html = preg_replace('#<(head|script|iframe|frame|noscript|noframes|option|style)[\s\S]*?</\1>#is', '', $html);
+		$html = preg_replace('#<(br|hr|li|ol|ul|dl|h\d|dd|dt|center|form|table|tr|marquee|div|pre|p|blockquote).*?>#is', "\n", $html);
+		$html = preg_replace(array(
+						'@&(quot|#34);@i',
+						'@&(amp|#38);@i',
+						'@&(lt|#60);@i',
+						'@&(gt|#62);@i',
+						'@&(nbsp|#160);@i',
+						'@&(iexcl|#161);@i',
+						'@&(cent|#162);@i',
+						'@&(pound|#163);@i',
+						'@&(copy|#169);@i',
+						'@&(reg|#174);@i',
+						'@&rdquo;@i',
+						'@&ldquo;@i',
+						'@&#(\d+);@e'),
+					array(
+						  '"',
+						  '&',
+						  '<',
+						  '>',
+						  ' ',
+						  chr(161),
+						  chr(162),
+						  chr(163),
+						  chr(169),
+						  chr(174),
+						  '”',
+						  "“",
+						  'chr(\1)'
+					), $html);
+		$html = strip_tags($html);
+		
+		$html = preg_replace('#([\r\n]\s+[\r\n])+#is', "\n", $html);
+		
+		$html = str_replace("\r", "\n", $html);
+		$html = str_replace("\n\n", "\n", $html);
+		while(strpos($html, "\n\n\n") !== false){
+			$html = str_replace("\n\n\n", "\n", $html);
+		}
+		while(strpos($html, "\n\n") !== false){
+			$html = str_replace("\n\n", "\n", $html);
+		}
+		return $html;
+	}
 	
 	public static function cut_str($html, $start='', $end=''){
 		if($start){
@@ -661,11 +712,16 @@ class spider {
 				curl_setopt($ch, CURLOPT_POST, 1);
 				//find out post file use multipart/form-data
 				$multipart = 0;
-				foreach($post as $v){
-					if($v[0] == '@'){
-						$multipart = 1;
-						break;
+				if(is_array($post)){
+					foreach($post as $v){
+						if($v[0] == '@'){
+							$multipart = 1;
+							break;
+						}
 					}
+				}else{
+					//is string 
+					$multipart = 1;
 				}
 				curl_setopt($ch, CURLOPT_POSTFIELDS, $multipart ? $post : http_build_query($post));
 			}
