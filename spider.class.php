@@ -1,6 +1,8 @@
 <?php
 class spider {
 	
+	public static $last_reponse_code = -1;
+	
 	public static function no_html($html){
 		return self::reg_replace($html, array('<(*)>' => ''));
 	}
@@ -738,7 +740,7 @@ class spider {
 			//print_r($defheaders);
 			//$info = curl_getinfo($ch, CURLINFO_HEADER_OUT );print_r($info);echo http_build_query($post);exit;
 			$header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-			
+			self::$last_reponse_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 			$header = substr($data, 0, $header_size);
 			$data = substr($data, $header_size);
 			//match charset
@@ -806,8 +808,8 @@ class spider {
 										"\n" => '',
 										"\t" => '',
 										" " => '',
-										//"'" => '',
-										//"\"" => '',
+										"'" => '',
+										"\"" => '',
 									));
 						preg_match_all('/charset=([-\w]+)/', $head, $matches);
 						if(isset($matches[1][0]) && !empty($matches[1][0])){
