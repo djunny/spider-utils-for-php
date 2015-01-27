@@ -87,16 +87,20 @@ class spider {
 				}
 			}else{
 				//pattern=xxx(*)
-				if($part[0]){
-					$html = explode($part[0], $html);
-					if($html[1]){
-						return $returnfull ? $part[0].$html[1] : $html[1];
+				if($part[0]){ 
+					if(strpos($html, $part[0]) !== false) {
+						$html = explode($part[0], $html);
+						if($html[1]){
+							return $returnfull ? $part[0].$html[1] : $html[1];
+						}
 					}
 				}else if ($part[1]){
 					//pattern=(*)xxx
-					$html = explode($part[1], $html);
-					if($html[0]){
-						return $returnfull ? $html[0].$part[1] : $html[0];
+					if(strpos($html, $part[1]) !== false){
+						$html = explode($part[1], $html);
+						if($html[0]){
+							return $returnfull ? $html[0].$part[1] : $html[0];
+						}
 					}
 				}
 			}
@@ -223,6 +227,7 @@ class spider {
 						}
 					}else{
 						// match field by mask_match
+				
 						$value = self::mask_match($matchhtml, $pattern);
 						
 						if($value){
@@ -819,11 +824,11 @@ class spider {
 				}
 			}
 			//xml file
-			if(stripos($html, '<xml')!==false){
+			if(stripos($html, '<?xml')!==false){
 				//<?xml version="1.0" encoding="UTF-8"
 				if(stripos($html, 'encoding=') !==false){
 					$head = self::mask_match($html, '<'.'?xml(*)?'.'>');
-					preg_match_all('/encoding=([-\w]+)/is', $head, $matches);
+					preg_match_all('/encoding=["\']?([-\w]+)/is', $head, $matches);
 					if(isset($matches[1][0]) && !empty($matches[1][0])){
 						$detect_charset = $matches[1][0];
 					}
