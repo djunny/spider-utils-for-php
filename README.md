@@ -46,19 +46,6 @@ spider-utils-for-php:
 ```
 
 
-##什么？正则匹配？
-```php
-	// $result = abc
-	$result = spider::mask_match('123abc123', '123(*)123');
-	// $result = abc
-	$result = spider::mask_match('abc123', '(*)123');
-	// $result = 123
-	$result = spider::mask_match('123abcabc', '(*)abc');
-	// return full match mode $result = 123abc
-	$result = spider::mask_match('123abcdef', '(*)abc', true);
-```
-
-
 ##What？发送http GET请求？ 
 ```php
     // 自动转码 utf-8, 
@@ -85,13 +72,13 @@ spider-utils-for-php:
 ##What？要带 UserAgent 和 Cookie? 
 
 ```php
-	// 一切 headers 都可以带
+	// 一切 headers 都可以传入
 	$headers = array(
 		'Cookie' => 'uid=1; my_name_is=mzphp',
 		'UserAgent' => 'userAgentForIphone',
 		'Referer' => 'http://baidu.com/',
 	);
-    $result = spider::fetch_url('http://www.baidu.com/s?',$post, $headers);
+    $result = spider::fetch_url('http://www.baidu.com/s?', $post, $headers);
 ```
 
 
