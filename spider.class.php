@@ -318,7 +318,6 @@ class spider {
 								// string match
 								$value = self::str_match($html, $pattern, $dom, $option);
 							//}
-						
 							if($value){
 								$find_value = true;
 								// when find processor
@@ -841,7 +840,7 @@ class spider {
 		}
 		
 		if($detect_charset){
-			return iconv($detect_charset, $tocharset, $html);
+			return iconv($detect_charset.'//ignore', $tocharset.'//ignore', $html);
 		}else{
 			return $html;
 		}
