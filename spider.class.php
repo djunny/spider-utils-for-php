@@ -1,7 +1,9 @@
 <?php
 class spider {
 	
-	public static $last_reponse_code = -1;
+	public static $last_response_code = -1;
+	
+	public static $url = '';
 	
 	public static function no_html($html){
 		return self::reg_replace($html, array('<(*)>' => ''));
@@ -654,6 +656,7 @@ class spider {
 							$header = strtolower($header);
 							if(substr($header, 0, 9) == 'location:') {
 								$location = trim(substr($header, 9));
+								self::$url = $location;
 								return self::fetch_url($location, $timeout, $post, $headers, $deep + 1);
 							}else if(strpos($header, 'content-encoding:') !== false 
 								&& strpos($header, 'gzip') !==  false) {
@@ -745,7 +748,8 @@ class spider {
 			//print_r($defheaders);
 			//$info = curl_getinfo($ch, CURLINFO_HEADER_OUT );print_r($info);echo http_build_query($post);exit;
 			$header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-			self::$last_reponse_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+			self::$last_response_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+			self::$url = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
 			$header = substr($data, 0, $header_size);
 			$data = substr($data, $header_size);
 			//match charset
