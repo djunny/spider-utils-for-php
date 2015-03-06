@@ -45,7 +45,8 @@ class spider {
 						  "“",
 						  'chr(\1)'
 					), $html);
-		$html = strip_tags($html);
+		// 用 strip_tag 会乱码，纠结...
+		$html = self::strip_tags($html);
 		
 		$html = preg_replace('#([\r\n]\s+[\r\n])+#is', "\n", $html);
 		
@@ -58,6 +59,49 @@ class spider {
 			$html = str_replace("\n\n", "\n", $html);
 		}
 		return $html;
+	}
+	
+	// like strip_tag
+	public static function strip_tags($text, $tags=''){
+		preg_match_all('/<([\w\-\.]+)[\s]*\/?[\s]*>/si', strtolower(trim($tags)), $tags); 
+		$tags = array_unique($tags[1]); 
+		if(is_array($tags) && count($tags)>0) {
+			$block_set = array(
+				'head' => 1, 
+				'script' => 1, 
+				'iframe' => 1, 
+				'frame' => 1, 
+				'noscript' => 1, 
+				'noframes' => 1, 
+				'option' => 1, 
+				'style' => 1,
+			);
+			$searches = array();
+			$line_tags = $block_tags = '';
+			foreach($tags as $tag){
+				if(!$tag){
+					continue;
+				}
+				if(isset($block_set[$tag])){
+					unset($block_set[$tag]);
+				}
+				$line_tags .= $tag.'|';
+			}
+			$block_set = array_keys($block_set);
+			$block_tags = implode('|', $block_set);
+			if($block_tags){
+				$searches[] = '#<('.$block_tags.')\b[\s\S]*?</\1>#is';
+				
+			}
+			if($line_tags){
+				$line_tags = substr($line_tags, 0, -1);
+				$searches[] = '#<(?!(?:'. $line_tags.')|\/(?:'.$line_tags.')\b)[^>]*?>#si';
+			}
+			return preg_replace($searches, '', $text);
+		}elseif($invert == FALSE) { 
+			return preg_replace('#<\/?[^>]*?>#si', '', $text); 
+		} 
+		return $text; 
 	}
 	
 	public static function cut_str($html, $start='', $end=''){
@@ -489,6 +533,9 @@ class spider {
 
 	//relative path to absolute
 	public static function abs_url($base_url, $src_url) {
+		if(!$src_url){
+			return '';
+		}
 		$src_info = parse_url($src_url);
 		if (isset($src_info['scheme'])) {
 			return $src_url;
@@ -505,7 +552,12 @@ class spider {
 			if (empty($src_info['path'])){
 				$path = ($base_info['path']); 
 			}else{
-				$path = (dirname($base_info['path']) . '/') . $src_info['path'];
+				// fix dirname 
+				if(substr($base_info['path'], -1) == '/'){
+					$path = $base_info['path'] . $src_info['path'];
+				}else{
+					$path = (dirname($base_info['path']) . '/') . $src_info['path'];
+				}
 			}
 		}
 		$rst = array();
@@ -584,6 +636,12 @@ class spider {
 		$socketmode = !$https && function_exists('fsockopen') && function_exists('mime_content_type') ? true : false;
 		// curl or socket
 		$fetchmode = function_exists('curl_init') || isset($headers['curl']) ? 'curl' : ($socketmode ? 'socket' : '');
+		//set support
+		if($headers['charset']){
+			$charset = $headers['charset'];
+		}
+		unset($headers['curl'], $headers['charset']);
+		
 		// merge headers
 		if(is_array($headers) && $headers){
 			$defheaders = array_merge($defheaders, $headers);
@@ -752,9 +810,11 @@ class spider {
 			$header = substr($data, 0, $header_size);
 			$data = substr($data, $header_size);
 			//match charset
-			preg_match('@Content-Type:\s*([\w\/]+)(;\s+charset\s*=\s*([\w-]+))?@is', $header, $charsetmatch);
-			if (isset($charsetmatch[3])){
-				$charset = $charsetmatch[3];
+			if(!$charset){
+				preg_match('@Content-Type:\s*([\w\/]+)(;\s+charset\s*=\s*([\w-]+))?@is', $header, $charsetmatch);
+				if (isset($charsetmatch[3])){
+					$charset = $charsetmatch[3];
+				}
 			}
 			return self::convert_html_charset($data, $charset);
 		} elseif($https && $allow_url_fopen && in_array('https', $stream_wraps)) {
@@ -842,7 +902,6 @@ class spider {
 		if(strtolower($detect_charset) =='iso-8859-1'){
 			$detect_charset = 'gbk';
 		}
-		
 		if($detect_charset){
 			return iconv($detect_charset.'//ignore', $tocharset.'//ignore', $html);
 		}else{
