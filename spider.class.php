@@ -10,43 +10,17 @@ class spider {
 	}
 	//convert html to text
 	public static function html2txt($html){
-		$html = preg_replace('/^[\s\t　]+/is', '', $html);
+		$html = preg_replace('/^[\s\t　'."\xA0".']+/is', ' ', $html);
 		$html = preg_replace('#<?xml[\s\S]*?>#is', '', $html);
 		$html = preg_replace('#<!--[\s\S]*?-->#is', '', $html);
 		$html = preg_replace('#<!doc[\s\S]*?>#is', '', $html);
 		$html = preg_replace('#<(head|script|iframe|frame|noscript|noframes|option|style)[\s\S]*?</\1>#is', '', $html);
 		$html = preg_replace('#<(br|hr|li|ol|ul|dl|h\d|dd|dt|center|form|table|tr|marquee|div|pre|p|blockquote).*?>#is', "\n", $html);
-		$html = preg_replace(array(
-						'@&(quot|#34);@i',
-						'@&(amp|#38);@i',
-						'@&(lt|#60);@i',
-						'@&(gt|#62);@i',
-						'@&(nbsp|#160);@i',
-						'@&(iexcl|#161);@i',
-						'@&(cent|#162);@i',
-						'@&(pound|#163);@i',
-						'@&(copy|#169);@i',
-						'@&(reg|#174);@i',
-						'@&rdquo;@i',
-						'@&ldquo;@i',
-						'@&#(\d+);@e'),
-					array(
-						  '"',
-						  '&',
-						  '<',
-						  '>',
-						  ' ',
-						  chr(161),
-						  chr(162),
-						  chr(163),
-						  chr(169),
-						  chr(174),
-						  '”',
-						  "“",
-						  'chr(\1)'
-					), $html);
 		// 用 strip_tag 会乱码，纠结...
 		$html = self::strip_tags($html);
+		// decode entities
+		$html = html_entity_decode($html);
+		//$html = preg_replace('@&#(\d+);@e', 'chr(\1)', $html);
 		
 		$html = preg_replace('#([\r\n]\s+[\r\n])+#is', "\n", $html);
 		
@@ -64,9 +38,9 @@ class spider {
 	// like strip_tag
 	public static function strip_tags($text, $tags=''){
 		preg_match_all('/<([\w\-\.]+)[\s]*\/?[\s]*>/si', strtolower(trim($tags)), $tags); 
-		$tags = array_unique($tags[1]); 
-		if(is_array($tags) && count($tags)>0) {
-			$block_set = array(
+		$tags = array_unique($tags[1]);
+		$searches = array();
+		static $block_set = array(
 				'head' => 1, 
 				'script' => 1, 
 				'iframe' => 1, 
@@ -75,8 +49,12 @@ class spider {
 				'noframes' => 1, 
 				'option' => 1, 
 				'style' => 1,
-			);
-			$searches = array();
+		);
+		//注释
+		$searches[] = '#<!--[\s\S]*?-->#is';
+		//ie 判断
+		$searches[] = '#<\!--[if[^\]]*?\]>[\S\s]<\!\[endif\]-->#is';
+		if(is_array($tags) && count($tags)>0) {
 			$line_tags = $block_tags = '';
 			foreach($tags as $tag){
 				if(!$tag){
@@ -98,8 +76,10 @@ class spider {
 				$searches[] = '#<(?!(?:'. $line_tags.')|\/(?:'.$line_tags.')\b)[^>]*?>#si';
 			}
 			return preg_replace($searches, '', $text);
-		}elseif($invert == FALSE) { 
-			return preg_replace('#<\/?[^>]*?>#si', '', $text); 
+		}elseif($invert == FALSE) {
+			$searches[] = '#<('.implode('|', $block_set).')\b[\s\S]*?</\1>#is';
+			$searches[] = '#<\/?[^>]*?>#si';
+			return preg_replace($searches, '', $text); 
 		} 
 		return $text; 
 	}
@@ -837,22 +817,8 @@ class spider {
 	
 	// gzdecode
 	private static function gzdecode($data){
-        $flags = ord(substr($data, 3, 1));
-        $headerlen = 10;
-        $extralen = 0;
-        $filenamelen = 0;
-        if ($flags & 4) {
-            $extralen = unpack('v' ,substr($data, 10, 2));
-            $extralen = $extralen[1];
-            $headerlen += 2 + $extralen;
-        }
-        if ($flags & 8) $headerlen = strpos($data, chr(0), $headerlen) + 1;
-        if ($flags & 16) $headerlen = strpos($data, chr(0), $headerlen) + 1;
-        if ($flags & 2) $headerlen += 2;
-        $unpacked = @gzinflate(substr($data, $headerlen));
-        if ($unpacked === FALSE) $unpacked = $data;
-        return $unpacked;
-    }//gzdecode end
+        return gzinflate(substr($data,10,-8));
+    }
 	
 	//detect html coding
 	private static function convert_html_charset($html, $charset, $tocharset ='utf-8'){
