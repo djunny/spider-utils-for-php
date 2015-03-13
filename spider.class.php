@@ -86,11 +86,11 @@ class spider {
 	
 	public static function cut_str($html, $start='', $end=''){
 		if($start){
-			$html = strstr($html, $start, false);
+			$html = stristr($html, $start, false);
 			$html = substr($html, strlen($start));
 		}
 		if($end){
-			$html = strstr($html, $end, true);
+			$html = stristr($html, $end, true);
 		}
 		return $html;
 	}
@@ -831,7 +831,7 @@ class spider {
 		}else{
 			if(stripos($html, '<html')!==false){
 				if(stripos($html, 'charset=') !==false){
-					$head = self::mask_match($html, '(*)</head>');
+					$head = self::mask_match(strtolower($html), '(*)</head>');
 					if($head){
 						$head = strtolower($head);
 						$head = self::reg_replace($head, array(
@@ -842,10 +842,10 @@ class spider {
 										"\n" => '',
 										"\t" => '',
 										" " => '',
-										"'" => '',
-										"\"" => '',
+										"'" => ' ',
+										"\"" => ' ',
 									));
-						preg_match_all('/charset=([-\w]+)/', $head, $matches);
+						preg_match_all('/charset\s*?=\s*?([-\w]+)/', $head, $matches);
 						if(isset($matches[1][0]) && !empty($matches[1][0])){
 							$detect_charset = $matches[1][0];
 						}
