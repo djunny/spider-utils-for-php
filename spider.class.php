@@ -20,6 +20,8 @@ class spider {
 		$html = self::strip_tags($html);
 		// decode entities
 		$html = html_entity_decode($html);
+		$html = htmlspecialchars_decode($html);
+		// 
 		//$html = preg_replace('@&#(\d+);@e', 'chr(\1)', $html);
 		
 		$html = preg_replace('#([\r\n]\s+[\r\n])+#is', "\n", $html);
@@ -829,8 +831,8 @@ class spider {
 			//优先取 http header中的charset
 			$detect_charset = $charset;
 		}else{
-			if(stripos($html, '<html')!==false){
-				if(stripos($html, 'charset=') !==false){
+			if(stripos($html, '<meta')!==false){
+				if(strpos($html, 'charset=') !==false){
 					$head = self::mask_match(strtolower($html), '(*)</head>');
 					if($head){
 						$head = strtolower($head);
