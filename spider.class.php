@@ -824,6 +824,7 @@ class spider {
 	
 	//detect html coding
 	private static function convert_html_charset($html, $charset, $tocharset ='utf-8'){
+		
 		//取html中的charset
 		$detect_charset = '';
 		//html file
@@ -847,10 +848,13 @@ class spider {
 										"'" => ' ',
 										"\"" => ' ',
 									));
-						preg_match_all('/charset\s*?=\s*?([-\w]+)/', $head, $matches);
-						if(isset($matches[1][0]) && !empty($matches[1][0])){
-							$detect_charset = $matches[1][0];
-						}
+						preg_match_all('/charset\s*?=\s*?([\-\w]+)/', $head, $matches);
+					}else{
+						preg_match_all('/<meta[^>]*?content=("|\'|).*?\bcharset=([\w\-]+)\b/is', $html, $matches);
+					}
+					
+					if(isset($matches[1][0]) && !empty($matches[1][0])){
+						$detect_charset = $matches[1][0];
 					}
 				}
 			}
@@ -871,6 +875,7 @@ class spider {
 			$detect_charset = 'gbk';
 		}
 		if($detect_charset){
+			//return mb_convert_encoding($html, $detect_charset, $tocharset);
 			return iconv($detect_charset.'//ignore', $tocharset.'//ignore', $html);
 		}else{
 			return $html;
