@@ -10,7 +10,14 @@ class spider {
 	}
 	//convert html to text
 	public static function html2txt($html){
-		$html = preg_replace('/^[\s\t　'."\xA0".']+/is', ' ', $html);
+		// html_entity_decode 中 &nbsp; 会导致乱码
+		$html = strtr($html, array(
+			'&nbsp;' => ' ',
+			'&rdquo;' => '”',
+			'&ldquo;' => '“',
+			//"\xA0" => ' ',
+		));
+		$html = preg_replace('/^[\s\t]+/is', ' ', $html);
 		$html = preg_replace('#<?xml[\s\S]*?>#is', '', $html);
 		$html = preg_replace('#<!--[\s\S]*?-->#is', '', $html);
 		$html = preg_replace('#<!doc[\s\S]*?>#is', '', $html);
@@ -20,17 +27,9 @@ class spider {
 		$html = self::strip_tags($html);
 		// decode entities
 		$html = html_entity_decode($html);
-		$html = htmlspecialchars_decode($html);
-		// 
-		//$html = preg_replace('@&#(\d+);@e', 'chr(\1)', $html);
-		
 		$html = preg_replace('#([\r\n]\s+[\r\n])+#is', "\n", $html);
 		
-		$html = str_replace("\r", "\n", $html);
-		$html = str_replace("\n\n", "\n", $html);
-		while(strpos($html, "\n\n\n") !== false){
-			$html = str_replace("\n\n\n", "\n", $html);
-		}
+		$html = str_replace(array("\r", "\n\n"), "\n", $html);
 		while(strpos($html, "\n\n") !== false){
 			$html = str_replace("\n\n", "\n", $html);
 		}
