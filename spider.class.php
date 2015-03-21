@@ -26,7 +26,7 @@ class spider {
 		// 用 strip_tag 会乱码，纠结...
 		$html = self::strip_tags($html);
 		// decode entities
-		$html = html_entity_decode($html);
+		$html = html_entity_decode($html, ENT_COMPAT, 'UTF-8');
 		$html = preg_replace('#([\r\n]\s+[\r\n])+#is', "\n", $html);
 		
 		$html = str_replace(array("\r", "\n\n"), "\n", $html);
