@@ -742,6 +742,30 @@ class spider {
 				curl_setopt($ch, CURLOPT_ENCODING, $defheaders['Accept-Encoding']);
 				unset($defheaders['Accept-Encoding']);
 			}
+			
+			//使用代理
+			/*
+				'proxy' =>array(
+					'type' => '', //HTTP or SOCKET
+					'host' => 'ip:port',
+					'auth' => 'BASIC:user:pass',
+				);
+			*/
+			if($defheaders['proxy']){
+				$proxy_type = strtoupper($defheaders['proxy']['type']) == 'SOCKET' ? CURLPROXY_SOCKS5 : CURLPROXY_HTTP;  
+				curl_setopt($ch, CURLOPT_PROXYTYPE, $proxy_type);  
+				curl_setopt($ch, CURLOPT_PROXY, $defheaders['proxy']['host']);
+				//代理要认证 
+				if($headers['proxy']['auth']){
+					list($auth_type, $auth_user, $auth_pass) = explode(':', $headers['proxy']['auth']);  
+					$auth_type = $auth_type == 'NTLM' ? CURLAUTH_BASIC : CURLAUTH_NTLM;  
+					curl_setopt($ch, CURLOPT_PROXYAUTH, $auth_type);  
+					$user = "".$auth_user.":".$auth_pass."";  
+					curl_setopt($ch, CURLOPT_PROXYUSERPWD, $user);
+				}
+			}
+			unset($defheaders['proxy']);
+			
 			// set version 1.0 
 			//curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
 			curl_setopt($ch, CURLOPT_MAXREDIRS, $deep ? $deep : 5);
@@ -756,6 +780,8 @@ class spider {
 				curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0); // 对认证证书来源的检查
 				curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2); // 从证书中检查SSL加密算法是否存在
 			}
+			
+			
 			if($post) {
 				curl_setopt($ch, CURLOPT_POST, 1);
 				//find out post file use multipart/form-data
