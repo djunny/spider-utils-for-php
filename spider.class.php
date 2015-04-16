@@ -816,6 +816,9 @@ class spider {
 			self::$url = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
 			$header = substr($data, 0, $header_size);
 			$data = substr($data, $header_size);
+			//extract last response header
+			$header = explode("\r\n\r\n", trim($header));
+			$header = array_pop($header);
 			//match charset
 			if(!$charset){
 				preg_match('@Content-Type:\s*([\w\/]+)(;\s+charset\s*=\s*([\w-]+))?@is', $header, $charsetmatch);
