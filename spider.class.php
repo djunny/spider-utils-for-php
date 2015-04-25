@@ -587,6 +587,7 @@ class spider {
 			$allow_url_fopen = strtolower(ini_get('allow_url_fopen'));
 			$allow_url_fopen = (empty($allow_url_fopen) || $allow_url_fopen == 'off') ? 0 : 1;
 		}
+		!is_array($headers) && $headers = array();
 		//headers
 		$HTTP_USER_AGENT = $_SERVER['HTTP_USER_AGENT'];
 		empty($HTTP_USER_AGENT) && $HTTP_USER_AGENT = 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0)';
