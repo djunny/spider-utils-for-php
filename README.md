@@ -48,17 +48,17 @@ spider-utils-for-php:
 
 ##What？发送http GET请求？ 
 ```php
-    // 自动转码 utf-8, 
-    $result =  spider::fetch_url('http://www.baidu.com/');
+    // 所有的 http 请求都会自动识别并统一转码成 utf-8
+    $result =  spider::GET('http://www.baidu.com/');
 ```
 
 ##What？发送http POST请求？
 
 ```php
-	$post = "wd=".urlencode("你的网址"); 
+    $post = "wd=".urlencode("你的网址"); 
     // 数组也一样
-	// $post = array("wd" => urlencode("你的网址"));
-    $result = spider::fetch_url('http://www.baidu.com/s?',$post);
+    // $post = array("wd" => urlencode("你的网址"));
+    $result = spider::POST('http://www.baidu.com/s?', $post);
 ```
 
 
@@ -66,7 +66,7 @@ spider-utils-for-php:
 
 ```php
     $post = array("wd" => "http://", "file" => "@c:/1.txt");
-    $result = spider::fetch_url('http://www.baidu.com/s?',$post);
+    $result = spider::POST('http://www.baidu.com/s?', $post);
 ```
 
 ##What？要带 UserAgent 和 Cookie? 
@@ -77,8 +77,17 @@ spider-utils-for-php:
 		'Cookie' => 'uid=1; my_name_is=mzphp',
 		'UserAgent' => 'userAgentForIphone',
 		'Referer' => 'http://baidu.com/',
+		//设置外网 ip
+		'ip' => '127.0.0.1',
+		//设置代理
+		'proxy' => array(
+			'type' => 'HTTP', //HTTP or SOCKET
+			'host' => 'ip:port',
+			'auth' => 'BASIC:user:pass',//BASIC or NTLM
+		),
 	);
-    $result = spider::fetch_url('http://www.baidu.com/s?', $post, $headers);
+    $post = array("wd" => "http://", "test" => "123");
+    $result = spider::POST('http://www.baidu.com/s?', $post, $headers);
 ```
 
 
@@ -89,7 +98,7 @@ spider-utils-for-php:
 	// 首先你需要一个女朋友
 	$key = "魔爪小说阅读器";
 	$url = 'http://www.sogou.com/web?query='.urlencode($key).'&ie=utf8';
-	$html = spider::fetch_url($url, '', array('Referer'=>'http://www.sogou.com/'));
+	$html = spider::GET($url, array('Referer'=>'http://www.sogou.com/'));
 	// 对你的女朋友进行分析
 	$keywordlist = spider::match($html, array('list'=>array(
 		'cut' => '相关搜索</caption>(*)</tr></table>',
@@ -107,7 +116,3 @@ spider-utils-for-php:
 好吧，你可以参考一下 mzphp2 项目中的 start_example 里的index_control，on_spider 方法：
 
 [http://git.oschina.net/mz/mzphp2/blob/master/start_example/control/index_control.class.php](http://git.oschina.net/mz/mzphp2/blob/master/start_example/control/index_control.class.php)
-
-##注：
-
-mime_content_type 方法需要 php 开启 finfo
