@@ -70,7 +70,6 @@ class spider {
 			$block_tags = implode('|', $block_set);
 			if($block_tags){
 				$searches[] = '#<('.$block_tags.')\b[\s\S]*?</\1>#is';
-				
 			}
 			if($line_tags){
 				$line_tags = substr($line_tags, 0, -1);
@@ -90,9 +89,7 @@ class spider {
 			$html = stristr($html, $start, false);
 			$html = substr($html, strlen($start));
 		}
-		if($end){
-			$html = stristr($html, $end, true);
-		}
+		$end && $html = stristr($html, $end, true);
 		return $html;
 	}
 	// mask match string 
@@ -121,7 +118,7 @@ class spider {
 							return $returnfull ? $part[0].$html[1] : $html[1];
 						}
 					}
-				}else if ($part[1]){
+				}elseif($part[1]){
 					//pattern=(*)xxx
 					if(strpos($html, $part[1]) !== false){
 						$html = explode($part[1], $html);
@@ -164,7 +161,7 @@ class spider {
 					}
 					break;
 				}
-			}else if(preg_match('/^([\#\/\|\!\@]).+\\1([ismSMI]+)?$/is', $search)){
+			}elseif(preg_match('/^([\#\/\|\!\@]).+\\1([ismSMI]+)?$/is', $search)){
 				//regexp replace
 				$html = preg_replace($search, $replace, $html);
 			}else{
