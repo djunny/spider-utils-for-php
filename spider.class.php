@@ -665,10 +665,11 @@ class spider {
             $charset = $headers['charset'];
         }
         unset($headers['curl'], $headers['charset']);
-
         // merge headers
         if (is_array($headers) && $headers) {
-            $defheaders = array_merge($defheaders, $headers);
+            foreach($headers as $key=>$val){
+                $defheaders[$key] = $val;
+            }
         }
 
         if ($fetchmode == 'socket') {
@@ -728,7 +729,7 @@ class spider {
                 $status = stream_get_meta_data($fp);
                 $gzip = false;
                 if (!$status['timed_out']) {
-                    $start_time = time();
+                    $starttime = time();
                     while (!feof($fp)) {
                         if (($header = @fgets($fp)) && ($header == "\r\n" || $header == "\n")) {
                             break;
@@ -759,7 +760,7 @@ class spider {
                             $limit -= strlen($data);
                             $stop = $limit <= 0;
                         }
-                        if (time() - $start_time > $timeout) break;
+                        if (time() - $starttime > $timeout) break;
                     }
                     if ($gzip) {
                         $return = self::gzdecode($return);
@@ -775,6 +776,56 @@ class spider {
             curl_setopt($ch, CURLOPT_HEADER, 1);
             curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
             curl_setopt($ch, CURLINFO_HEADER_OUT, 1);
+            if ($https) {
+                // 证书
+                if (isset($defheaders[CURLOPT_SSLCERT])) {
+                    $ssl_verifypeer = 1;
+                    //使用证书：cert 与 key 分别属于两个.pem文件
+                    curl_setopt($ch, CURLOPT_SSLCERT, realpath($defheaders[CURLOPT_SSLCERT]));
+                    curl_setopt($ch, CURLOPT_SSLKEY, realpath($defheaders[CURLOPT_SSLKEY]));
+                    if (isset($defheaders[CURLOPT_SSLCERTTYPE])) {
+                        curl_setopt($ch, CURLOPT_SSLCERTTYPE, $defheaders[CURLOPT_SSLCERTTYPE]);
+                    }
+                    if (isset($defheaders[CURLOPT_SSLKEYTYPE])) {
+                        curl_setopt($ch, CURLOPT_SSLKEYTYPE, $defheaders[CURLOPT_SSLKEYTYPE]);
+                    }
+                    // unset ssl index
+                    unset($defheaders[CURLOPT_SSLCERTTYPE], $defheaders[CURLOPT_SSLCERT], $defheaders[CURLOPT_SSLKEYTYPE], $defheaders[CURLOPT_SSLKEY]);
+                } else if (isset($defheaders[CURLOPT_SSLCERT])) {
+                    $ssl_verifypeer = 1;
+                    // 单证书模式
+                    // 严格检查证书
+                    curl_setopt($ch, CURLOPT_SSLCERT, realpath($defheaders[CURLOPT_SSLCERT]));
+                    // unset ssl index
+                    unset($defheaders[CURLOPT_SSLCERT]);
+                } else {
+                    $ssl_verifypeer = 0;
+                }
+                // support cainfo
+                if (isset($defheaders[CURLOPT_CAINFO])) {
+                    curl_setopt($ch, CURLOPT_CAINFO, realpath($defheaders[CURLOPT_CAINFO]));
+                    unset($defheaders[CURLOPT_CAINFO]);
+                }
+                // support capath
+                if (isset($defheaders[CURLOPT_CAPATH])) {
+                    curl_setopt($ch, CURLOPT_CAPATH, realpath($defheaders[CURLOPT_CAPATH]));
+                    unset($defheaders[CURLOPT_CAPATH]);
+                }
+                // 严格检查证书
+                if(isset($defheaders[CURLOPT_SSL_VERIFYPEER])) {
+                    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, $defheaders[CURLOPT_SSL_VERIFYPEER]);
+                    unset($defheaders[CURLOPT_SSL_VERIFYPEER]);
+                }else {
+                    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, $ssl_verifypeer);
+                }
+                // 从证书中检查SSL加密算法是否存在
+                if(isset($defheaders[CURLOPT_SSL_VERIFYHOST])){
+                    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, $defheaders[CURLOPT_SSL_VERIFYHOST]);
+                    unset($defheaders[CURLOPT_SSL_VERIFYHOST]);
+                }else {
+                    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+                }
+            }
             // fix IN PHP 5.6
             curl_setopt($ch, CURLOPT_SAFE_UPLOAD, false);
             //多ip下，设置出口ip
