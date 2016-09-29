@@ -1,3 +1,5 @@
+简单、易用的网络类，spider/network for PHP , too simple .
+
 spider-utils-for-php:
 
 ##原则：
@@ -11,7 +13,7 @@ spider-utils-for-php:
 - http 请求支持 gzip，加速请求，节约请求成本。
 - 跟踪 301、302 跳转（可设置最大跳转数量）。
 - 支持统一转码为 utf-8，不再需要关心页面是否是 gbk、big5、utf8 等编码。
-- 字符串支持通配符、正则表达式、DOM表达式三种方式匹配。
+- 字符串支持通配符、正则表达式、DOM表达式（已弃用）三种方式匹配。
 - url支持匹配后自动相对路径转绝对路径。
 - ToBe Continue.
 
@@ -77,13 +79,14 @@ spider-utils-for-php:
 		'Cookie' => 'uid=1; my_name_is=mzphp',
 		'UserAgent' => 'userAgentForIphone',
 		'Referer' => 'http://baidu.com/',
-		//设置外网 ip
+		// 设置外网 ip (需要您有多个外网 IP 支持)
 		'ip' => '127.0.0.1',
-		//设置代理
+		// 设置代理
 		'proxy' => array(
 			'type' => 'HTTP', //HTTP or SOCKET
-			'host' => 'ip:port',
-			'auth' => 'BASIC:user:pass',//BASIC or NTLM
+			'host' => '127.0.0.1:8888',
+                        // BASIC or NTLM
+			//'auth' => 'BASIC:user:pass',
 		),
 	);
     $post = array("wd" => "http://", "test" => "123");
@@ -101,9 +104,15 @@ spider-utils-for-php:
 	$html = spider::GET($url, array('Referer'=>'http://www.sogou.com/'));
 	// 对你的女朋友进行分析
 	$keywordlist = spider::match($html, array('list'=>array(
+                // 先是让 spider 去取得(*)对应的结果
 		'cut' => '相关搜索</caption>(*)</tr></table>',
-		'pattern' => '#id="sogou_\d+_\d+">(?<key>[^>]*?)</a>#is',
-	)));
+                // 然后让 spider 用正则去匹配对应的列表，美其名曰：表白
+		'pattern' => array(
+                        '#id="sogou_hehehe">(?<key>[^>]*?)</a>#is',
+	                // 什么第一次表白没有成功？好那么我们来第二种表白方式
+                        '#id="sogou_\d+_\d+">(?<key>[^>]*?)</a>#is',
+	        )
+           )));
 	//
 	$newarr = array();
 	foreach($keywordlist['list'] as $key=>$val){
